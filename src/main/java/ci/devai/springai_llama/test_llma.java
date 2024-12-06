@@ -11,9 +11,9 @@ import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.ai.ollama.management.ModelManagementOptions;
-import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.api.OpenAiApi;
+//import org.springframework.ai.openai.OpenAiChatModel;
+//import org.springframework.ai.openai.OpenAiChatOptions;
+//import org.springframework.ai.openai.api.OpenAiApi;
 
 import java.util.Collections;
 import java.util.List;
@@ -63,7 +63,7 @@ public class test_llma {
 
         String userInputText1 =
                 """
-                    e suis satisfait par la qualité de l'écran,mais le clavier est de mauvais alors que pour la souris c'est moyen niveau qualité.
+                    je suis satisfait par la qualité de l'écran,mais le clavier est de mauvais alors que pour la souris c'est moyen niveau qualité.
                     par ailleur je pense que cette ordinateur consomme beaucoup d'énergie.
                 """;
 
