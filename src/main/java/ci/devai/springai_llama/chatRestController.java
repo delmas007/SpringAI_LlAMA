@@ -1,10 +1,13 @@
 package ci.devai.springai_llama;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.ResponseEntity;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.Media;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
@@ -14,12 +17,13 @@ import reactor.core.publisher.Flux;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
 public class chatRestController {
 
-    private ChatClient chatClient;
+    private final ChatClient chatClient;
 
     @Value("classpath:/prompts/system-message.st")
     private Resource systemMessageRessource;
@@ -65,12 +69,51 @@ public class chatRestController {
     }
 
     @GetMapping(value = "/sentimentObject")
-    public Sentiment sentimentReturnObject(String review) {
-        return  chatClient.prompt()
+    public List<Sentiment> sentimentReturnObject(String review) {
+        return Collections.singletonList(chatClient.prompt()
                 .system(systemMessageRessource)
                 .user(review)
                 .call()
-                .entity(Sentiment.class);
+                .entity(Sentiment.class));
+    }
+
+    @GetMapping(value = "/sentimentObjects")
+    public List<Question> sentimentReturnObjecte(String review) {
+        return Collections.singletonList(chatClient.prompt()
+                .system(systemMessageRessourceObject)
+                .user(review)
+                .call()
+                .entity(Question.class));
+    }
+
+    @GetMapping(value = "/generateQuestions")
+    public List<Question> generateQuestions(@RequestParam String sujet) {
+        String prompt = "Génère 2 questions aléatoires sur le sujet suivant : " + sujet + ". Chaque question doit avoir trois réponses possibles, et un niveau de difficulté (Facile, Moyen, Difficile) doit être spécifié pour chaque question. La réponse doit être structurée en format JSON, où chaque question doit inclure un texte de question et trois propositions de réponse.";
+
+        String systemMessage = "Vous êtes un générateur de questions à choix multiples (QCM). Pour chaque question, vous proposez trois réponses possibles et attribuez un niveau de difficulté (Facile, Moyen, Difficile). en francais";
+
+        ResponseEntity<ChatResponse, List<Question>> response = chatClient.prompt()
+                .system(systemMessage)
+                .user(prompt)
+                .call()
+                .responseEntity(new ParameterizedTypeReference<>() {});
+
+        return response.entity();
+    }
+
+    @PostMapping(value = "/responses")
+    public List<ResultDTO> responses(@RequestBody List<Response> responses){
+        String prompt = "La liste des questions et des réponses est la suivante : " + responses;
+
+        String systemMessage = "Tu es un correcteur de QCM. Pour chaque question, " +
+                "retourne la question, la réponse du candidat, la réponse correcte et le statut de la réponse (CORRECT ou INCORRECT).";
+
+        ResponseEntity<ChatResponse, List<ResultDTO>> response = chatClient.prompt()
+                .system(systemMessage)
+                .user(prompt)
+                .call()
+                .responseEntity(new ParameterizedTypeReference<>() {});
+        return response.entity();
     }
 
     @GetMapping(value = "/describeImage")
