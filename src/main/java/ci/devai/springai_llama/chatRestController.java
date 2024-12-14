@@ -19,6 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class chatRestController {
@@ -102,19 +103,40 @@ public class chatRestController {
     }
 
     @PostMapping(value = "/responses")
-    public List<ResultDTO> responses(@RequestBody List<Response> responses){
-        String prompt = "La liste des questions et des réponses est la suivante : " + responses;
+    public List<ResultDTO> responses(@RequestBody List<Response> responses) {
+        // Préparer le prompt en convertissant les réponses dans un format lisible
+        StringBuilder promptBuilder = new StringBuilder("La liste des questions et des réponses est la suivante :\n");
+        for (Response response : responses) {
+            promptBuilder.append("Question: ").append(response.question()).append("\n");
+            promptBuilder.append("Réponse du candidat: ").append(response.response()).append("\n");
+            promptBuilder.append("Propositions: ").append(response.propostionReponse()).append("\n");
+        }
+        String prompt = promptBuilder.toString();
 
-        String systemMessage = "Tu es un correcteur de QCM. Pour chaque question, " +
-                "retourne la question, la réponse du candidat, la réponse correcte et le statut de la réponse (CORRECT ou INCORRECT).";
+        String systemMessage = "Tu es un correcteur de QCM. La réponse du candidat sera dans 'response'. Pour chaque question, " +
+                "retourne la question, la réponse du candidat, la réponse correcte et le statut de la réponse (CORRECT ou INCORRECT)";
 
         ResponseEntity<ChatResponse, List<ResultDTO>> response = chatClient.prompt()
                 .system(systemMessage)
                 .user(prompt)
                 .call()
                 .responseEntity(new ParameterizedTypeReference<>() {});
-        return response.entity();
+
+        System.out.println("API Response: " + response.entity().get(0).getCorrectAnswer());
+        System.out.println("API Response: " + response.entity().get(1).getCorrectAnswer());
+
+        List<ResultDTO> results = response.entity().stream().map(result -> {
+            if (result.getAnswer().equals(result.getCorrectAnswer())) {
+                result.setAnswerStatus(AnswerStatus.CORRECT);
+            } else {
+                result.setAnswerStatus(AnswerStatus.INCORRECT);
+            }
+            return result;
+        }).collect(Collectors.toList());
+
+        return results;
     }
+
 
     @GetMapping(value = "/describeImage")
     public String describeImage() throws IOException {
